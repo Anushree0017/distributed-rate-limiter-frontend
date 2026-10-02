@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Plus, Trash2 } from 'lucide-react'
 import { ApiError } from '@/api/client'
 import type { GroupMemberInput } from '@/api/types'
+import { useClientContext } from '@/clients/ClientContext'
+import { ClientPicker } from '@/components/ClientPicker'
 import { AlgorithmParamsFields } from '@/components/forms/AlgorithmParamsFields'
 import { ConflictErrorBanner } from '@/components/forms/ConflictErrorBanner'
 import { IdentifierTypesPicker } from '@/components/forms/IdentifierTypesPicker'
@@ -23,11 +25,13 @@ interface MemberRow {
 interface GroupCreateLocationState {
   initialMembers?: { endpoint: string; overrides: Record<string, unknown> }[]
   initialName?: string
+  initialClientId?: string
 }
 
 export function GroupCreatePage() {
   const navigate = useNavigate()
   const location = useLocation() as { state?: GroupCreateLocationState }
+  const { selectedClient } = useClientContext()
   const { data: algorithms } = useAlgorithms()
   const createGroup = useCreateGroup()
 
@@ -35,8 +39,10 @@ export function GroupCreatePage() {
   // action (Section 4, Step 2) — otherwise this is a plain manual create.
   const prefilledMembers = location.state?.initialMembers
   const prefilledName = location.state?.initialName
+  const prefilledClientId = location.state?.initialClientId
 
   const [name, setName] = useState(prefilledName ?? '')
+  const [clientId, setClientId] = useState(prefilledClientId ?? selectedClient ?? '')
   const [description, setDescription] = useState('')
   const [algorithmId, setAlgorithmId] = useState('')
   const [identifierTypes, setIdentifierTypes] = useState<string[]>([])
@@ -77,7 +83,7 @@ export function GroupCreatePage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    if (!name || !algorithmId || identifierTypes.length === 0 || !actor) return
+    if (!name || !clientId || !algorithmId || identifierTypes.length === 0 || !actor) return
     setStoredActor(actor)
 
     const memberInputs: GroupMemberInput[] = members
@@ -86,6 +92,7 @@ export function GroupCreatePage() {
 
     try {
       const group = await createGroup.mutateAsync({
+        client_id: clientId,
         name,
         description: description || undefined,
         algorithm_id: algorithmId,
@@ -107,6 +114,11 @@ export function GroupCreatePage() {
       <h1 className="text-xl font-semibold">Create group</h1>
       <form onSubmit={onSubmit} className="max-w-2xl space-y-6">
         {error && <ConflictErrorBanner error={error} />}
+
+        <div className="space-y-1">
+          <Label>Client</Label>
+          <ClientPicker value={clientId} onChange={setClientId} />
+        </div>
 
         <div className="space-y-1">
           <Label htmlFor="group-name">Name</Label>

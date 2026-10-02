@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { GroupMember } from '@/api/types'
 import { AddMembersModal } from '@/components/AddMembersModal'
+import { ClientBadge } from '@/components/ClientBadge'
 import { DataTable, type DataTableColumn } from '@/components/DataTable'
 import { DeleteGroupDialog } from '@/components/DeleteGroupDialog'
 import { DetachRuleModal } from '@/components/DetachRuleModal'
@@ -72,6 +73,12 @@ export function GroupDetailPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-muted-foreground">Client</dt>
+              <dd>
+                <ClientBadge clientId={group.client_id} />
+              </dd>
+            </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">Algorithm</dt>
               <dd>{group.algorithm.name}</dd>

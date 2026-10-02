@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { parseSpecFile } from '@/api/importSpec'
+import { useClientContext } from '@/clients/ClientContext'
+import { ClientPicker } from '@/components/ClientPicker'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 
 export function ImportUploadPage() {
   const navigate = useNavigate()
+  const { selectedClient } = useClientContext()
+  const [targetClientId, setTargetClientId] = useState(selectedClient ?? '')
   const [error, setError] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
 
@@ -12,6 +17,10 @@ export function ImportUploadPage() {
     setError(null)
     const file = e.target.files?.[0]
     if (!file) return
+    if (!targetClientId) {
+      setError('Choose a target client first.')
+      return
+    }
     setFileName(file.name)
     try {
       const contents = await file.text()
@@ -20,7 +29,7 @@ export function ImportUploadPage() {
         setError('No endpoints found in this file.')
         return
       }
-      navigate('/import/review', { state: { candidates } })
+      navigate('/import/review', { state: { candidates, targetClientId } })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to parse file.')
     }
@@ -36,10 +45,16 @@ export function ImportUploadPage() {
         </p>
       </div>
 
+      <div className="space-y-1">
+        <Label>Target client</Label>
+        <ClientPicker value={targetClientId} onChange={setTargetClientId} className="max-w-xs" />
+        <p className="text-xs text-muted-foreground">Every rule/group created from this import is created under this client.</p>
+      </div>
+
       <div className="rounded-md border border-dashed border-border p-6 text-center">
-        <input id="spec-file" type="file" accept=".json,.yaml,.yml" className="hidden" onChange={onFileSelected} />
+        <input id="spec-file" type="file" accept=".json,.yaml,.yml" className="hidden" onChange={onFileSelected} disabled={!targetClientId} />
         <label htmlFor="spec-file">
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" disabled={!targetClientId}>
             <span>Choose file</span>
           </Button>
         </label>

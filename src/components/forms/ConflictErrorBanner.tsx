@@ -36,6 +36,12 @@ export function ConflictErrorBanner({ error, conflicts }: ConflictErrorBannerPro
               {String(error.details.endpoint ?? '')} {String(error.details.identifier_signature ?? '')}
             </p>
           )}
+          {error?.code.toLowerCase().includes('client') && (
+            <p className="text-xs">
+              A rule or group can only be moved to, or gain members from, a target in its own client — cross-client moves
+              are rejected.
+            </p>
+          )}
         </div>
       </div>
     </div>

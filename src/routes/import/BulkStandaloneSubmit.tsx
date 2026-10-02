@@ -21,6 +21,7 @@ interface RowResult {
 
 interface BulkStandaloneSubmitProps {
   endpoints: CandidateEndpoint[]
+  clientId: string
   onDone: () => void
 }
 
@@ -29,7 +30,7 @@ interface BulkStandaloneSubmitProps {
  * uniqueness checks against each other mid-batch). A 409 on one row doesn't
  * abort the rest; failed/conflicted rows can be retried without
  * re-submitting ones that already succeeded. */
-export function BulkStandaloneSubmit({ endpoints, onDone }: BulkStandaloneSubmitProps) {
+export function BulkStandaloneSubmit({ endpoints, clientId, onDone }: BulkStandaloneSubmitProps) {
   const { data: algorithms } = useAlgorithms()
   const [algorithmId, setAlgorithmId] = useState('')
   const [identifierTypes, setIdentifierTypes] = useState<string[]>([])
@@ -51,6 +52,7 @@ export function BulkStandaloneSubmit({ endpoints, onDone }: BulkStandaloneSubmit
       setResults([...next])
       try {
         await createRule({
+          client_id: clientId,
           endpoint: next[i].endpoint.path,
           identifier_types: identifierTypes,
           algorithm_id: algorithmId,

@@ -17,6 +17,7 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENV API_URL=""
+ENV BACKEND_URL=""
 
 EXPOSE 80
 ENTRYPOINT ["/entrypoint.sh"]

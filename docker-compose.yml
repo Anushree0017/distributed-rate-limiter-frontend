@@ -2,18 +2,22 @@
 # (../backend) deliberately doesn't containerize its own dependencies (see
 # its CLAUDE.md) and has no Dockerfile of its own, so this doesn't invent one
 # — run the backend however you normally do (`uvicorn main:app`, with your
-# own Redis/Postgres) and point API_URL at it.
+# own Redis/Postgres, and auth enabled with a bootstrapped admin client) and
+# point BACKEND_URL at it.
 #
-#   API_URL=http://host.docker.internal:8000/api/v1 docker compose up --build
+#   BACKEND_URL=http://host.docker.internal:8000 docker compose up --build
 #
-# NOTE: the backend has no CORS middleware. A cross-origin API_URL (anything
-# other than same-origin with wherever this container is served from) will
-# be blocked by the browser unless you add CORS to the backend or put both
-# services behind one reverse-proxy origin.
+# Auth (Phase 6) requires every admin call to carry a bearer token, which the
+# browser would otherwise have to fetch cross-origin. API_URL defaults to the
+# relative "/api/v1" (same-origin with this container) and nginx proxies
+# /api/* to BACKEND_URL server-to-server — see nginx.conf and entrypoint.sh.
+# That removes the CORS requirement entirely: the backend needs no CORS
+# middleware, and the browser never makes a cross-origin request.
 services:
   frontend:
     build: .
     ports:
       - "8080:80"
     environment:
-      API_URL: ${API_URL:-http://host.docker.internal:8000/api/v1}
+      API_URL: ${API_URL:-/api/v1}
+      BACKEND_URL: ${BACKEND_URL:-http://host.docker.internal:8000}

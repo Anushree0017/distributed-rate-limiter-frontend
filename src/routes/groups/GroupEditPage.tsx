@@ -65,8 +65,8 @@ export function GroupEditPage() {
         {error && <ConflictErrorBanner error={error} />}
 
         <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-          Algorithm ({group.algorithm.name}) and identifier types ({group.identifier_types.join('+')}) are immutable after
-          creation.
+          Client (<span className="font-mono">{group.client_id}</span>), algorithm ({group.algorithm.name}), and identifier
+          types ({group.identifier_types.join('+')}) are immutable after creation.
         </div>
 
         <div className="space-y-1">

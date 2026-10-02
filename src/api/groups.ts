@@ -1,5 +1,4 @@
-import { API_URL } from '@/config'
-import { ApiError, apiRequest } from '@/api/client'
+import { ApiError, apiRequest, rawRequest } from '@/api/client'
 import type {
   AddMembersRequest,
   AddMembersResponse,
@@ -37,11 +36,7 @@ export function deleteGroup(id: string, members: 'detach' | 'delete'): Promise<v
 // apiRequest's throw-on-non-2xx behavior and returns the body either way;
 // only a genuinely unexpected status (5xx, network) throws.
 export async function addMembers(groupId: string, payload: AddMembersRequest): Promise<AddMembersResponse> {
-  const response = await fetch(`${API_URL}/groups/${groupId}/members`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
+  const response = await rawRequest(`/groups/${groupId}/members`, { method: 'POST', body: payload })
   const data = await response.json()
   if (response.status === 201 || response.status === 409) {
     return data as AddMembersResponse

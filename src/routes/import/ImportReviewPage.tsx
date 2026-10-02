@@ -1,19 +1,22 @@
 import { useMemo, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import type { CandidateEndpoint } from '@/api/importSpec'
+import { ClientPicker } from '@/components/ClientPicker'
 import { BulkStandaloneSubmit } from '@/routes/import/BulkStandaloneSubmit'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 type Assignment = { type: 'unassigned' } | { type: 'standalone' } | { type: 'group'; groupName: string } | { type: 'skipped' }
 
 export function ImportReviewPage() {
-  const location = useLocation() as { state?: { candidates?: CandidateEndpoint[] } }
+  const location = useLocation() as { state?: { candidates?: CandidateEndpoint[]; targetClientId?: string } }
   const navigate = useNavigate()
   const candidates = location.state?.candidates
 
+  const [targetClientId, setTargetClientId] = useState(location.state?.targetClientId ?? '')
   const [assignments, setAssignments] = useState<Record<string, Assignment>>(() => {
     const initial: Record<string, Assignment> = {}
     for (const c of candidates ?? []) {
@@ -23,6 +26,14 @@ export function ImportReviewPage() {
   })
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [standaloneBatch, setStandaloneBatch] = useState<CandidateEndpoint[] | null>(null)
+
+  // Changing the target client after parsing invalidates anything already
+  // queued for creation under the old one (plan Section 5) — the review
+  // table/groupings themselves are client-agnostic and stay put.
+  function changeTargetClient(next: string) {
+    setTargetClientId(next)
+    setStandaloneBatch(null)
+  }
 
   const groupNames = useMemo(() => {
     const names = new Set<string>()
@@ -66,7 +77,7 @@ export function ImportReviewPage() {
         return a?.type === 'group' && a.groupName === groupName
       })
       .map((c) => ({ endpoint: c.path, overrides: {} }))
-    navigate('/groups/new', { state: { initialMembers: members, initialName: groupName } })
+    navigate('/groups/new', { state: { initialMembers: members, initialName: groupName, initialClientId: targetClientId } })
   }
 
   const standaloneCandidates = (candidates ?? []).filter((c) => assignments[c.id]?.type === 'standalone')
@@ -78,6 +89,11 @@ export function ImportReviewPage() {
         <p className="text-sm text-muted-foreground">
           {candidates.length} endpoint(s) parsed. Every grouping/assignment below is editable before anything is created.
         </p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Label className="shrink-0">Target client</Label>
+        <ClientPicker value={targetClientId} onChange={changeTargetClient} className="max-w-xs" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -133,11 +149,15 @@ export function ImportReviewPage() {
 
       {standaloneCandidates.length > 0 && !standaloneBatch && (
         <div>
-          <Button onClick={() => setStandaloneBatch(standaloneCandidates)}>Create {standaloneCandidates.length} standalone rule(s)</Button>
+          <Button disabled={!targetClientId} onClick={() => setStandaloneBatch(standaloneCandidates)}>
+            Create {standaloneCandidates.length} standalone rule(s)
+          </Button>
         </div>
       )}
 
-      {standaloneBatch && <BulkStandaloneSubmit endpoints={standaloneBatch} onDone={() => setStandaloneBatch(null)} />}
+      {standaloneBatch && (
+        <BulkStandaloneSubmit endpoints={standaloneBatch} clientId={targetClientId} onDone={() => setStandaloneBatch(null)} />
+      )}
     </div>
   )
 }
