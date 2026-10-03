@@ -5,6 +5,8 @@ import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { ApiError } from '@/api/client'
 import type { Rule } from '@/api/types'
+import { useClientContext } from '@/clients/ClientContext'
+import { ClientPicker } from '@/components/ClientPicker'
 import { AlgorithmParamsFields } from '@/components/forms/AlgorithmParamsFields'
 import { ConflictErrorBanner } from '@/components/forms/ConflictErrorBanner'
 import { IdentifierTypesPicker } from '@/components/forms/IdentifierTypesPicker'
@@ -17,6 +19,7 @@ import { useAlgorithms } from '@/queries/useAlgorithms'
 import { useCreateRule, useUpdateRule } from '@/queries/useRules'
 
 const schema = z.object({
+  clientId: z.string().min(1, 'Client is required'),
   endpoint: z.string().min(1, 'Endpoint is required'),
   identifierTypes: z.array(z.string()).min(1, 'At least one identifier type is required'),
   algorithmId: z.string().min(1, 'Algorithm is required'),
@@ -37,6 +40,7 @@ interface RuleFormProps {
  * instead (algorithm/identifier types/priority are group-governed). */
 export function RuleForm({ mode, rule }: RuleFormProps) {
   const navigate = useNavigate()
+  const { selectedClient } = useClientContext()
   const { data: algorithms } = useAlgorithms()
   const createRule = useCreateRule()
   const updateRule = useUpdateRule(rule?.id ?? '')
@@ -52,6 +56,7 @@ export function RuleForm({ mode, rule }: RuleFormProps) {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
+      clientId: rule?.client_id ?? selectedClient ?? '',
       endpoint: rule?.endpoint ?? '',
       identifierTypes: rule?.identifier_types ?? [],
       algorithmId: rule?.algorithm.id ?? '',
@@ -79,6 +84,7 @@ export function RuleForm({ mode, rule }: RuleFormProps) {
     try {
       if (mode === 'create') {
         const created = await createRule.mutateAsync({
+          client_id: values.clientId,
           endpoint: values.endpoint,
           identifier_types: values.identifierTypes,
           algorithm_id: values.algorithmId,
@@ -107,6 +113,19 @@ export function RuleForm({ mode, rule }: RuleFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-6">
       {submitError && <ConflictErrorBanner error={submitError} />}
+
+      <div className="space-y-1">
+        <Label>Client</Label>
+        <Controller
+          control={control}
+          name="clientId"
+          render={({ field }) => (
+            <ClientPicker value={field.value} onChange={field.onChange} disabled={mode === 'edit'} includeDisabled={mode === 'edit'} />
+          )}
+        />
+        {mode === 'edit' && <p className="text-xs text-muted-foreground">A rule's client is immutable.</p>}
+        {errors.clientId && <p className="text-xs text-destructive">{errors.clientId.message}</p>}
+      </div>
 
       <div className="space-y-1">
         <Label htmlFor="endpoint">Endpoint</Label>

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getStoredActor, setStoredActor } from '@/lib/actor'
 import { useGroup, useGroups } from '@/queries/useGroups'
-import { useMoveRuleToGroup } from '@/queries/useRules'
+import { useMoveRuleToGroup, useRule } from '@/queries/useRules'
 
 interface MoveToGroupModalProps {
   ruleId: string
@@ -19,9 +19,14 @@ interface MoveToGroupModalProps {
 }
 
 /** Correction 4: reuses ConflictErrorBanner for the 409 endpoint+signature
- * collision this can also return, same as the Add Members modal. */
+ * collision this can also return, same as the Add Members modal.
+ *
+ * Target group list is restricted to the rule's own client (plan Section
+ * 5) — a cross-client move can't even be selected here, let alone submitted
+ * into the 409 the backend would otherwise return for one. */
 export function MoveToGroupModal({ ruleId, open, onOpenChange, onMoved }: MoveToGroupModalProps) {
-  const { data: groupsPage } = useGroups({ page: 1, page_size: 100 })
+  const { data: rule } = useRule(ruleId)
+  const { data: groupsPage } = useGroups({ client_id: rule?.client_id, page: 1, page_size: 100 })
   const [groupId, setGroupId] = useState('')
   const { data: targetGroup } = useGroup(groupId || undefined)
   const [overrides, setOverrides] = useState<Record<string, unknown>>({})

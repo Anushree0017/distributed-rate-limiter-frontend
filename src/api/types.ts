@@ -38,6 +38,7 @@ export interface Algorithm {
 
 export interface Rule {
   id: string
+  client_id: string
   endpoint: string
   identifier_types: string[]
   identifier_signature: string
@@ -62,6 +63,7 @@ export interface RuleListResponse {
 }
 
 export interface RuleFilters {
+  client_id?: string
   endpoint?: string
   identifier_type?: string
   identifier_signature?: string
@@ -72,6 +74,7 @@ export interface RuleFilters {
 }
 
 export interface RuleCreateRequest {
+  client_id: string
   endpoint: string
   identifier_types: string[]
   algorithm_id: string
@@ -108,6 +111,7 @@ export interface GroupMemberInput {
 
 export interface RuleGroup {
   id: string
+  client_id: string
   name: string
   description: string | null
   algorithm: AlgorithmSummary
@@ -145,12 +149,14 @@ export interface RuleGroupListResponse {
 }
 
 export interface RuleGroupFilters {
+  client_id?: string
   name_contains?: string
   page?: number
   page_size?: number
 }
 
 export interface RuleGroupCreateRequest {
+  client_id: string
   name: string
   description?: string | null
   algorithm_id: string
@@ -197,4 +203,83 @@ export interface ApiErrorBody {
     message: string
     details: Record<string, unknown>
   }
+}
+
+export type ClientStatus = 'active' | 'disabled'
+export type ClientScope = 'check' | 'admin'
+
+export interface Client {
+  client_id: string
+  name: string
+  description: string | null
+  status: ClientStatus
+  scopes: ClientScope[]
+  created_at: string
+  updated_at: string
+}
+
+export interface ClientSecret {
+  id: string
+  secret_hint: string
+  created_at: string
+  expires_at: string | null
+  revoked_at: string | null
+}
+
+// `GET /clients/{client_id}` is assumed to embed the secrets list (plan
+// Section 5's "Secrets panel") — there's no separate list-secrets endpoint
+// in the backend contract summary.
+export interface ClientDetail extends Client {
+  secrets: ClientSecret[]
+}
+
+export interface ClientListResponse {
+  items: Client[]
+  page: number
+  page_size: number
+  total: number
+}
+
+export interface ClientFilters {
+  name?: string
+  status?: ClientStatus
+  page?: number
+  page_size?: number
+}
+
+export interface ClientCreateRequest {
+  client_id: string
+  name: string
+  description?: string | null
+  scopes: ClientScope[]
+}
+
+export interface ClientUpdateRequest {
+  name?: string
+  description?: string | null
+  scopes?: ClientScope[]
+  status?: ClientStatus
+}
+
+export interface ClientSecretCreateResponse {
+  secret: ClientSecret
+  plaintext_secret: string
+}
+
+// `POST /clients` returns the new client plus its first secret's plaintext
+// — the only other place (besides add-secret) the plaintext is ever sent.
+export interface ClientCreateResponse extends Client {
+  plaintext_secret: string
+}
+
+export interface TokenResponse {
+  access_token: string
+  token_type: string
+  expires_in: number
+  scope: string
+}
+
+export interface OAuthErrorBody {
+  error: string
+  error_description?: string
 }

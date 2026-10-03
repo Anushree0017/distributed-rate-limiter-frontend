@@ -1,6 +1,9 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import type { Rule, RuleStatus } from '@/api/types'
+import { useClientContext } from '@/clients/ClientContext'
+import { ClientBadge } from '@/components/ClientBadge'
+import { ClientPicker } from '@/components/ClientPicker'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { DataTable, type DataTableColumn } from '@/components/DataTable'
 import { DetachRuleModal } from '@/components/DetachRuleModal'
@@ -15,6 +18,8 @@ import { getStoredActor } from '@/lib/actor'
 const PAGE_SIZE = 20
 
 export function RulesListPage() {
+  const [searchParams] = useSearchParams()
+  const { selectedClient, setSelectedClient } = useClientContext()
   const [endpoint, setEndpoint] = useState('')
   const [identifierSignature, setIdentifierSignature] = useState('')
   const [algorithmId, setAlgorithmId] = useState<string>('')
@@ -24,8 +29,17 @@ export function RulesListPage() {
   const [deleteTarget, setDeleteTarget] = useState<Rule | null>(null)
   const [detachTarget, setDetachTarget] = useState<Rule | null>(null)
 
+  // A link like `/rules?client=orders-service` (from the client detail page)
+  // adopts the global switcher too, so Rules/Groups/the header all agree.
+  useEffect(() => {
+    const fromUrl = searchParams.get('client')
+    if (fromUrl) setSelectedClient(fromUrl)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const { data: algorithms } = useAlgorithms()
   const { data, isLoading } = useRules({
+    client_id: selectedClient || undefined,
     endpoint: endpoint || undefined,
     identifier_signature: identifierSignature || undefined,
     algorithm_id: algorithmId || undefined,
@@ -44,6 +58,7 @@ export function RulesListPage() {
 
   const columns: DataTableColumn<Rule>[] = [
     { key: 'endpoint', header: 'Endpoint', render: (r) => <Link to={`/rules/${r.id}`} className="font-mono text-sm text-primary hover:underline">{r.endpoint}</Link>, sortValue: (r) => r.endpoint },
+    { key: 'client', header: 'Client', render: (r) => <ClientBadge clientId={r.client_id} />, sortValue: (r) => r.client_id },
     { key: 'identifier_signature', header: 'Identifier signature', render: (r) => <span className="font-mono text-xs">{r.identifier_signature}</span> },
     { key: 'algorithm', header: 'Algorithm', render: (r) => r.algorithm.name, sortValue: (r) => r.algorithm.name },
     { key: 'priority', header: 'Priority', render: (r) => r.priority, sortValue: (r) => r.priority },
@@ -103,6 +118,17 @@ export function RulesListPage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        <ClientPicker
+          value={selectedClient ?? ''}
+          onChange={(v) => {
+            setSelectedClient(v || null)
+            setPage(1)
+          }}
+          includeAllOption
+          includeDisabled
+          placeholder="All clients"
+          className="w-48"
+        />
         <Input placeholder="Filter by endpoint" value={endpoint} onChange={(e) => { setEndpoint(e.target.value); setPage(1) }} className="w-48" />
         <Input
           placeholder="Filter by identifier_signature"

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ClientBadge } from '@/components/ClientBadge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { DetachRuleModal } from '@/components/DetachRuleModal'
 import { EffectiveParamsPreview } from '@/components/forms/EffectiveParamsPreview'
@@ -46,6 +47,12 @@ export function RuleDetailPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-muted-foreground">Client</dt>
+              <dd>
+                <ClientBadge clientId={rule.client_id} />
+              </dd>
+            </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">Algorithm</dt>
               <dd>{rule.algorithm.name}</dd>

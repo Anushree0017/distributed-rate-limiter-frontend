@@ -1,6 +1,9 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { IDENTIFIER_TYPES, type RuleGroupListItem } from '@/api/types'
+import { useClientContext } from '@/clients/ClientContext'
+import { ClientBadge } from '@/components/ClientBadge'
+import { ClientPicker } from '@/components/ClientPicker'
 import { DataTable, type DataTableColumn } from '@/components/DataTable'
 import { DeleteGroupDialog } from '@/components/DeleteGroupDialog'
 import { Badge } from '@/components/ui/badge'
@@ -13,13 +16,27 @@ import { useDeleteGroup, useGroups } from '@/queries/useGroups'
 const PAGE_SIZE = 20
 
 export function GroupsListPage() {
+  const [searchParams] = useSearchParams()
+  const { selectedClient, setSelectedClient } = useClientContext()
   const [name, setName] = useState('')
   const [algorithmId, setAlgorithmId] = useState('')
   const [identifierType, setIdentifierType] = useState('')
   const [page, setPage] = useState(1)
   const [deleteTarget, setDeleteTarget] = useState<RuleGroupListItem | null>(null)
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('client')
+    if (fromUrl) setSelectedClient(fromUrl)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const { data: algorithms } = useAlgorithms()
-  const { data, isLoading } = useGroups({ name_contains: name || undefined, page, page_size: PAGE_SIZE })
+  const { data, isLoading } = useGroups({
+    client_id: selectedClient || undefined,
+    name_contains: name || undefined,
+    page,
+    page_size: PAGE_SIZE,
+  })
   const deleteGroup = useDeleteGroup()
 
   // The backend's `RuleGroupFilter` only supports `name_contains` server-side
@@ -41,6 +58,7 @@ export function GroupsListPage() {
       ),
       sortValue: (g) => g.name,
     },
+    { key: 'client', header: 'Client', render: (g) => <ClientBadge clientId={g.client_id} />, sortValue: (g) => g.client_id },
     { key: 'algorithm', header: 'Algorithm', render: (g) => g.algorithm.name, sortValue: (g) => g.algorithm.name },
     { key: 'identifier_signature', header: 'Identifier signature', render: (g) => <span className="font-mono text-xs">{g.identifier_signature}</span> },
     { key: 'members', header: 'Members', render: (g) => <Badge variant="outline">{g.member_count}</Badge>, sortValue: (g) => g.member_count },
@@ -71,6 +89,17 @@ export function GroupsListPage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        <ClientPicker
+          value={selectedClient ?? ''}
+          onChange={(v) => {
+            setSelectedClient(v || null)
+            setPage(1)
+          }}
+          includeAllOption
+          includeDisabled
+          placeholder="All clients"
+          className="w-48"
+        />
         <Input
           placeholder="Filter by name"
           value={name}
