@@ -226,12 +226,9 @@ export interface ClientSecret {
   revoked_at: string | null
 }
 
-// `GET /clients/{client_id}` is assumed to embed the secrets list (plan
-// Section 5's "Secrets panel") — there's no separate list-secrets endpoint
-// in the backend contract summary.
-export interface ClientDetail extends Client {
-  secrets: ClientSecret[]
-}
+// `GET /clients/{client_id}` does not embed secrets — those come from the
+// separate `GET /clients/{client_id}/secrets` endpoint.
+export type ClientDetail = Client
 
 export interface ClientListResponse {
   items: Client[]

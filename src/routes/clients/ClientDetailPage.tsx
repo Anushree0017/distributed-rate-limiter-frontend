@@ -9,7 +9,7 @@ import { ToggleClientStatusDialog } from '@/components/ToggleClientStatusDialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAddSecret, useClient, useRevokeSecret, useUpdateClient } from '@/queries/useClients'
+import { useAddSecret, useClient, useClientSecrets, useRevokeSecret, useUpdateClient } from '@/queries/useClients'
 
 const MAX_ACTIVE_SECRETS = 2
 
@@ -17,6 +17,7 @@ export function ClientDetailPage() {
   const { client_id: clientId } = useParams<{ client_id: string }>()
   const navigate = useNavigate()
   const { data: client, isLoading } = useClient(clientId)
+  const { data: secrets, isLoading: isLoadingSecrets } = useClientSecrets(clientId)
   const addSecret = useAddSecret(clientId ?? '')
   const revokeSecret = useRevokeSecret(clientId ?? '')
   const updateClient = useUpdateClient(clientId ?? '')
@@ -28,7 +29,7 @@ export function ClientDetailPage() {
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>
   if (!client) return <p className="text-sm text-destructive">Client not found.</p>
 
-  const activeSecretCount = client.secrets.filter((s) => !s.revoked_at).length
+  const activeSecretCount = (secrets ?? []).filter((s) => !s.revoked_at).length
   const atSecretLimit = activeSecretCount >= MAX_ACTIVE_SECRETS
 
   const secretColumns: DataTableColumn<ClientSecret>[] = [
@@ -138,7 +139,13 @@ export function ClientDetailPage() {
           </span>
         </CardHeader>
         <CardContent>
-          <DataTable columns={secretColumns} data={client.secrets} rowKey={(s) => s.id} emptyMessage="No secrets yet." />
+          <DataTable
+            columns={secretColumns}
+            data={secrets ?? []}
+            rowKey={(s) => s.id}
+            isLoading={isLoadingSecrets}
+            emptyMessage="No secrets yet."
+          />
           {revokeError && <p className="mt-2 text-sm text-destructive">{revokeError.message}</p>}
         </CardContent>
       </Card>

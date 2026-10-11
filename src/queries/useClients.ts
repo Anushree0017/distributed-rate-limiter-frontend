@@ -34,6 +34,14 @@ export function useClient(clientId: string | undefined) {
   })
 }
 
+export function useClientSecrets(clientId: string | undefined) {
+  return useQuery({
+    queryKey: ['clients', clientId, 'secrets'],
+    queryFn: () => clientsApi.listSecrets(clientId as string),
+    enabled: Boolean(clientId),
+  })
+}
+
 // `gcTime: 0` — the response carries the new client's first plaintext
 // secret, which must never linger in the query cache (plan Section 6).
 export function useCreateClient() {

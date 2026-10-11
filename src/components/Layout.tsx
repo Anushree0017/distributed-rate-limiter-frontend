@@ -49,7 +49,7 @@ export function Layout({ children }: { children: ReactNode }) {
             includeAllOption
             includeDisabled
             placeholder="All clients"
-            className="w-56"
+            className="w-72"
           />
           <div className="flex items-center gap-3 text-sm">
             <span className="text-muted-foreground">

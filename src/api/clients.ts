@@ -6,6 +6,7 @@ import type {
   ClientDetail,
   ClientFilters,
   ClientListResponse,
+  ClientSecret,
   ClientSecretCreateResponse,
   ClientUpdateRequest,
 } from '@/api/types'
@@ -16,6 +17,10 @@ export function getClients(filters: ClientFilters): Promise<ClientListResponse> 
 
 export function getClient(clientId: string): Promise<ClientDetail> {
   return apiRequest<ClientDetail>(`/clients/${clientId}`)
+}
+
+export function listSecrets(clientId: string): Promise<ClientSecret[]> {
+  return apiRequest<ClientSecret[]>(`/clients/${clientId}/secrets`)
 }
 
 export function createClient(payload: ClientCreateRequest): Promise<ClientCreateResponse> {
